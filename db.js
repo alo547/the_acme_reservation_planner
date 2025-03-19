@@ -1,6 +1,7 @@
 const { Client } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
+const bcrypt = require('bcrypt');
 
 const client = new Client(process.env.DATABASE_URL);
 
@@ -12,6 +13,11 @@ const createReservation = async({ date, party_count, restaurant_id, customer_id 
     return response.rows[0];
   };
 
+  const findUserByUsername = async (username) => {
+    const SQL = 'SELECT * FROM customers WHERE name = $1;';
+    const response = await client.query(SQL, [username]);
+    return response.rows[0];
+  };
 
 const createTables = async () => {
     const SQL = `
@@ -21,7 +27,8 @@ const createTables = async () => {
 
     CREATE TABLE customers (
       id UUID PRIMARY KEY,
-      name VARCHAR(100) NOT NULL
+      name VARCHAR(100) NOT NULL,
+      password VARCHAR(100) NOT NULL
     );
 
     CREATE TABLE restaurants (
@@ -41,12 +48,11 @@ const createTables = async () => {
     await client.query(SQL);
 };
 
-const createCustomer = async (name) => {
-    const SQL = `
-    INSERT INTO customers(id, name)
-    VALUES($1, $2) RETURNING *;`;
-    const response = await client.query(SQL, [uuidv4(), name]);
-    return response.rows[0];
+const createCustomer = async (name, password) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const SQL = `INSERT INTO customers(id, name, password) VALUES($1, $2, $3) RETURNING *;`;
+  const response = await client.query(SQL, [uuidv4(), name, hashedPassword]);
+  return response.rows[0];
 };
 
 const createRestaurant = async (name) => {
@@ -77,4 +83,4 @@ const fetchRestaurants = async () => {
 };
 
 
-module.exports = { createTables, client, fetchRestaurants, createCustomer, createRestaurant, fetchCustomers, fetchReservations, createReservation }
+module.exports = { createTables, client, fetchRestaurants, createCustomer, createRestaurant, fetchCustomers, fetchReservations, createReservation, findUserByUsername }
