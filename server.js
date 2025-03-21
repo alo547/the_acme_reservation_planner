@@ -4,12 +4,12 @@ const axios = require("axios");
 const app = express();
 const bcrypt = require('bcrypt');
 const { findUserByUsername } = require('./db.js');
-const jwt = require('jsonwebtoken');
+
 require('dotenv').config();
 
 app.use(express.json());
 
-const SECRET = process.env.JWT_SECRET || 'your_default_secret_key';
+const SECRET = process.env.JWT_SECRET || 'jwt_key';
 
 const generateToken = (user) => {
   const token = jwt.sign({ id: user.id }, SECRET, { expiresIn: '1h' });
@@ -153,7 +153,6 @@ app.post('/api/customers/:id/reservations', async (req, res, next) => {
       customer_id: req.params.id
     });
     res.status(201).send(reservation);
-    //   res.status(201).send(reservation);
   }
   catch (ex) {
     next(ex);
@@ -215,3 +214,5 @@ const init = async () => {
   }
 };
 init();
+
+module.exports = app;
